@@ -45,4 +45,15 @@ if [ $options_found != 3 ]; then
   exit 1
 fi
 
-exit 0
+./startup $Hostname 17235 $nAvatars $Difficulty
+MazePort=$?
+
+if [[ MazePort -gt 0 && MazePort -lt 7 ]]; then 
+	echo "Error initializing maze." >&2
+	exit 2
+fi
+
+echo "Maze port number is $MazePort"
+
+
+

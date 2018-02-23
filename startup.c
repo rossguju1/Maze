@@ -6,8 +6,8 @@
  * 
  * usage: inclient hostname port
  * 
- * David Kotz, 1987, 1992, 2016
- * Adapted from Figure 7a in Introductory 4.3bsd IPC, PS1:7-15.
+ * Rachel Martin, Raphael Brantley, Steven, Ross Guju
+ * Adapted from David Kotz inclient.c
  */
 
 #include <stdio.h>
@@ -15,9 +15,9 @@
 #include <unistd.h>	      // read, write, close
 #include <strings.h>	      // bcopy, bzero
 #include <netdb.h>	      // socket-related structures
+#include "amazing.h"
 
 /**************** file-local constants ****************/
-static const int BUFSIZE = 1024;     // read/write buffer size
 
 /**************** main() ****************/
 int
@@ -29,7 +29,7 @@ main(const int argc, char *argv[])
   int numAva;
   int diff;
   AM_Message initial;
-
+  AM_Message recievedMessage;
   // check arguments
   program = argv[0];
   if (argc != 5) {
@@ -44,7 +44,7 @@ main(const int argc, char *argv[])
 
   initial.type = htonl(AM_INIT);
   initial.init.nAvatars = htonl(numAva);
-  initial.init.difficulty = htonl(diff);
+  initial.init.Difficulty = htonl(diff);
   // Look up the hostname specified on command line
   struct hostent *hostp = gethostbyname(hostname);
   if (hostp == NULL) {
@@ -72,24 +72,20 @@ main(const int argc, char *argv[])
   }
   printf("Connected!\n");
 
-  // read content from stdin (file descriptor = 0) and write to socket
-  char buf[BUFSIZE];	      // a buffer for reading data from stdin
-  int bytes_read;	      // #bytes read from socket
-  do {
-    if(write(comm_sock, ) < 0)
-    
-    if ((bytes_read = read(0, buf, BUFSIZE-1)) < 0) {
-      perror("reading from stdin");
-      exit(5);
-    } else {
-      if (write(comm_sock, buf, bytes_read) < 0)  {
-	perror("writing on stream socket");
-	exit(6);
-      }
-    }
-  } while (bytes_read > 0);
+  if(send(comm_sock, &initial, sizeof(AM_Message), 0) == -1) {
+    fprintf(stderr, "Message could not be sent to the server\n");
+    exit(5);
+  }
   
-  close(comm_sock);
-
-  return 0;
+  if(recv(comm_sock, &recievedMessage, sizeof(AM_Message), 0) == -1) {
+    fprintf(stderr, "Initialization message could not be recieved from the server\n");
+    exit(6);
+  } else {
+    if(ntohl(recievedMessage.type) == AM_INIT_OK) {
+      return ntohl(recievedMessage.init_ok.MazePort);
+    } else {
+       fprintf(stderr, "Initialization message could not be understood from the server\n");
+        exit(6);
+    }
+  }
 }
