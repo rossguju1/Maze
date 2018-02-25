@@ -26,15 +26,15 @@
 		* The graph will be an array of size = (MazeWidth * MazeHeight) and originally will have all edges between orthogonal nodes. The edges will be deleted as we find there is a wall. 
 		* After every turn is requested, we compare the array of positions to the updated positions sent in AM_AVATAR_TURN and see if the move was accepted. We then update our client array of positions.
 
-5. Pseudo Code: Pseudo code description of the module.
+5. Pseudo Code:
 	* Arguments are parsed and nAvatars, Difficulty and Hostname are populated
 	* Amazing_$USER_N_D.log is started with the first line containing $USER, the MazePort, and the date & time		
 	* amazingClient.c is started with the parameters:
-			* Hostname 
-			* 17235 
-			* nAvatars 
-			* Difficulty 
-			* log file name
+		* Hostname 
+		* 17235 
+		* nAvatars 
+		* Difficulty 
+		* log file name
 	* AM_connect is called and returns a AM_MESSAGE
 	* A graph is with the number of nodes equal to (MazeWidth * MazeHeight) and all othrogonal edges initialized.
 	* An array of the positions and directions(originally North) for each avatar is created
@@ -52,7 +52,7 @@
 	* If solved, append to the log that it was solved
 	* Close sockets and exit
 
-	* Our maze solving algorithm,
+	Our maze solving algorithm,
 		* Check if the avatar is in the center of the graph.
 		* If so, request no move,
 		* If not, 
