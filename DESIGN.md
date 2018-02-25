@@ -41,14 +41,15 @@
 	An array of threads for the avatars is created
 	A socket is created for each and connects to the server and sends the ready message
 	Initial AM_AVATAR_TURN is parsed 
-	While not yet solved
+	While not yet solved and moves < AM_MAX_MOVES
 		For each avatar thread
-			If moves < AM_MAX_MOVES
-				Decide on a move with our algorithm
-				Send an AM_AVATAR_MOVE message
-				Recieve and parse AM_AVATAR_TURN message
-					compare positions to our position array to see if move was valid
-					update local graph by removing an edge if move was invalid
+			Decide on a move with our algorithm
+			Send an AM_AVATAR_MOVE message
+			Append to the log file the requested move
+			Recieve and parse AM_AVATAR_TURN message
+				compare positions to our position array to see if move was valid
+				update local graph by removing an edge if move was invalid
+	If solved, append to the log that it was solved
 	Close sockets and exit
 
 	Our maze solving algorithm,
