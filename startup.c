@@ -20,17 +20,14 @@
 /**************** file-local constants ****************/
 
 /**************** main() ****************/
-int
-main(const int argc, char *argv[])
+AM_Message
+AM_connect(const char *hostname, const int port, const int numAva, const int diff)
 {
-  char *program;	      // this program's name
-  char *hostname;	      // server hostname
-  int port;		      // server port
-  int numAva;
-  int diff;
   AM_Message initial;
   AM_Message recievedMessage;
   // check arguments
+
+/*
   program = argv[0];
   if (argc != 5) {
     fprintf(stderr, "usage: %s hostname port numAva diff\n", program);
@@ -41,6 +38,7 @@ main(const int argc, char *argv[])
     numAva = atoi(argv[3]);
     diff = atoi(argv[4]);
   }
+*/
 
   initial.type = htonl(AM_INIT);
   initial.init.nAvatars = htonl(numAva);
@@ -48,7 +46,7 @@ main(const int argc, char *argv[])
   // Look up the hostname specified on command line
   struct hostent *hostp = gethostbyname(hostname);
   if (hostp == NULL) {
-    fprintf(stderr, "%s: unknown host '%s'\n", program, hostname);
+    fprintf(stderr, "startup: unknown host '%s'\n", hostname);
     exit(3);
   }
 
@@ -82,7 +80,7 @@ main(const int argc, char *argv[])
     exit(6);
   } else {
     if(ntohl(recievedMessage.type) == AM_INIT_OK) {
-      return ntohl(recievedMessage.init_ok.MazePort);
+      return recievedMessage;
     } else {
        fprintf(stderr, "Initialization message could not be understood from the server\n");
         exit(6);
