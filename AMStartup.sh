@@ -45,15 +45,13 @@ if [ $options_found != 3 ]; then
   exit 1
 fi
 
-./startup $Hostname 17235 $nAvatars $Difficulty
-MazePort=$?
+./amazingClient $Hostname 17235 $nAvatars $Difficulty addd in log name
+Error=$?
 
-if [[ MazePort -gt 0 && MazePort -lt 7 ]]; then 
+if [[ Error -gt 0 && Error -lt 7 ]]; then 
 	echo "Error initializing maze." >&2
 	exit 2
 fi
-
-echo "Maze port number is $MazePort"
 
 
 
