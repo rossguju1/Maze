@@ -53,12 +53,12 @@
 	* Close sockets and exit
 
 	Our maze solving algorithm,
-		* Check if the avatar is in the center of the graph.
-		* If so, request no move,
-		* If not, 
-			* set desiredDirection to the right of the direction the avatar is facing
-			* Check if an edge exists in the graph from current position to the the desired direction
-				* If so,
-					* Send a request to move in that direction
-				* If not, update the desiredDirection counter-clockwise around a compass rose (ie, East updates to North)
+	* Check if the avatar is in the center of the graph.
+	* If so, request no move,
+	* If not, 
+		* set desiredDirection to the right of the direction the avatar is facing
+		* Check if an edge exists in the graph from current position to the the desired direction
+			* If so,
+				* Send a request to move in that direction
+			* If not, update the desiredDirection counter-clockwise around a compass rose (ie, East updates to North)
 
