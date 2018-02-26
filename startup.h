@@ -17,7 +17,7 @@ typedef struct AM_Message AM_Message;
  *
  *	Returns the AM_INIT_OK message sent by the server.
  */
-AM_Message AM_connect(char *hostname, int port, int numAva, int diff);
+AM_Message* AM_connect(char *hostname, int port, int numAva, int diff);
 
 
 #endif

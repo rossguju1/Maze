@@ -20,11 +20,11 @@
 /**************** file-local constants ****************/
 
 /**************** main() ****************/
-AM_Message
+AM_Message*
 AM_connect(const char *hostname, const int port, const int numAva, const int diff)
 {
   AM_Message initial;
-  AM_Message recievedMessage;
+  AM_Message* recievedMessage = malloc(sizeof(AM_Message));
   // check arguments
 
 /*
@@ -47,7 +47,7 @@ AM_connect(const char *hostname, const int port, const int numAva, const int dif
   struct hostent *hostp = gethostbyname(hostname);
   if (hostp == NULL) {
     fprintf(stderr, "startup: unknown host '%s'\n", hostname);
-    exit(3);
+    return NULL;
   }
 
   // Initialize fields of the server address
@@ -60,30 +60,30 @@ AM_connect(const char *hostname, const int port, const int numAva, const int dif
   int comm_sock = socket(AF_INET, SOCK_STREAM, 0);
   if (comm_sock < 0) {
     perror("opening socket");
-    exit(2);
+    return NULL;
   }
 
   // And connect that socket to that server   
   if (connect(comm_sock, (struct sockaddr *) &server, sizeof(server)) < 0) {
     perror("connecting stream socket");
-    exit(4);
+    return NULL;
   }
   printf("Connected!\n");
 
   if(send(comm_sock, &initial, sizeof(AM_Message), 0) == -1) {
     fprintf(stderr, "Message could not be sent to the server\n");
-    exit(5);
+    return NULL;
   }
   
-  if(recv(comm_sock, &recievedMessage, sizeof(AM_Message), 0) == -1) {
+  if(recv(comm_sock, recievedMessage, sizeof(AM_Message), 0) == -1) {
     fprintf(stderr, "Initialization message could not be recieved from the server\n");
-    exit(6);
+    return NULL;
   } else {
-    if(ntohl(recievedMessage.type) == AM_INIT_OK) {
-      return recievedMessage;
-    } else {
-       fprintf(stderr, "Initialization message could not be understood from the server\n");
-        exit(6);
+      if(ntohl(recievedMessage->type) == AM_INIT_OK) {
+       return recievedMessage;
+      } else {
+        fprintf(stderr, "Initialization message could not be understood from the server\n");
+        return NULL;
     }
   }
 }
