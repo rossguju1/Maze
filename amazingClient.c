@@ -58,7 +58,6 @@ main(const int argc, char *argv[])
   recievedMessage = AM_connect(hostname, port, numAva, diff);
   if(recievedMessage != NULL) {
     if(ntohl(recievedMessage->type) == AM_INIT_OK) {
-      printf("testing \n");
       MazePort = ntohl(recievedMessage->init_ok.MazePort);
       MazeWidth = ntohl(recievedMessage->init_ok.MazeWidth);
       MazeHeight = ntohl(recievedMessage->init_ok.MazeHeight);
@@ -71,7 +70,13 @@ main(const int argc, char *argv[])
   }
   time(&currTime);
   fprintf(log, "%s, %lu, %s", user, (unsigned long)MazePort, ctime(&currTime));
-  printf("%lu %lu \n", (unsigned long)MazeWidth, (unsigned long)MazeHeight);
+  
+
+ //THREADS
+
+
+  fclose(log);
+  
 
 }
 

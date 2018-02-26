@@ -45,13 +45,12 @@ if [ $options_found != 3 ]; then
   exit 1
 fi
 
-./amazingClient $Hostname 17235 $nAvatars $Difficulty addd in log name
-Error=$?
+./amazingClient $Hostname 17235 $nAvatars $Difficulty "Amazing_""$USER""_""$nAvatars""_""$Difficulty".log $USER
 
-if [[ Error -gt 0 && Error -lt 7 ]]; then 
-	echo "Error initializing maze." >&2
-	exit 2
-fi
+##if [[ Error -gt 0 && Error -lt 7 ]]; then 
+##	echo "Error initializing maze." >&2
+##	exit 2
+##fi
 
 
 

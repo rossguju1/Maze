@@ -1,12 +1,10 @@
 /* 
- * statup - connects to the server with the number of avatars and the difficulty
+ * statup.c - module to connect to the server with the number of avatars and the difficulty
  *
  * Makes a connection to the given host/port and sends a AM_INIT message
  * recieves AM_INIT_OK and returns the MazePort, MazeHeight, and MazeWidth to the server
  * 
- * usage: inclient hostname port
- * 
- * Rachel Martin, Raphael Brantley, Steven, Ross Guju
+ * Rachel Martin, Raphael Brantley, Steven Karson, Ross Guju
  * Adapted from David Kotz inclient.c
  */
 
@@ -25,24 +23,11 @@ AM_connect(const char *hostname, const int port, const int numAva, const int dif
 {
   AM_Message initial;
   AM_Message* recievedMessage = malloc(sizeof(AM_Message));
-  // check arguments
-
-/*
-  program = argv[0];
-  if (argc != 5) {
-    fprintf(stderr, "usage: %s hostname port numAva diff\n", program);
-    exit(1);
-  } else {
-    hostname = argv[1];
-    port = atoi(argv[2]);
-    numAva = atoi(argv[3]);
-    diff = atoi(argv[4]);
-  }
-*/
 
   initial.type = htonl(AM_INIT);
   initial.init.nAvatars = htonl(numAva);
   initial.init.Difficulty = htonl(diff);
+
   // Look up the hostname specified on command line
   struct hostent *hostp = gethostbyname(hostname);
   if (hostp == NULL) {
@@ -70,11 +55,13 @@ AM_connect(const char *hostname, const int port, const int numAva, const int dif
   }
   printf("Connected!\n");
 
+  // Send the AM_INIT message
   if(send(comm_sock, &initial, sizeof(AM_Message), 0) == -1) {
     fprintf(stderr, "Message could not be sent to the server\n");
     return NULL;
   }
   
+  // Recieve the AM_INIT_OK message
   if(recv(comm_sock, recievedMessage, sizeof(AM_Message), 0) == -1) {
     fprintf(stderr, "Initialization message could not be recieved from the server\n");
     return NULL;
