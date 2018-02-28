@@ -45,12 +45,14 @@ AM_connect(const char *hostname, const int port, const int numAva, const int dif
   int comm_sock = socket(AF_INET, SOCK_STREAM, 0);
   if (comm_sock < 0) {
     perror("opening socket");
+    close(comm_sock);
     return NULL;
   }
 
   // And connect that socket to that server   
   if (connect(comm_sock, (struct sockaddr *) &server, sizeof(server)) < 0) {
     perror("connecting stream socket");
+    close(comm_sock);
     return NULL;
   }
   printf("Connected!\n");
@@ -58,18 +60,22 @@ AM_connect(const char *hostname, const int port, const int numAva, const int dif
   // Send the AM_INIT message
   if(send(comm_sock, &initial, sizeof(AM_Message), 0) == -1) {
     fprintf(stderr, "Message could not be sent to the server\n");
+    close(comm_sock);
     return NULL;
   }
   
   // Recieve the AM_INIT_OK message
   if(recv(comm_sock, recievedMessage, sizeof(AM_Message), 0) == -1) {
     fprintf(stderr, "Initialization message could not be recieved from the server\n");
+    close(comm_sock);
     return NULL;
   } else {
       if(ntohl(recievedMessage->type) == AM_INIT_OK) {
+      close(comm_sock);
        return recievedMessage;
       } else {
         fprintf(stderr, "Initialization message could not be understood from the server\n");
+        close(comm_sock);
         return NULL;
     }
   }
