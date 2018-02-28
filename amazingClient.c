@@ -15,14 +15,22 @@
 #include <strings.h>        // bcopy, bzero
 #include <netdb.h>        // socket-related structures
 #include <time.h>
+#include <pthread.h>
 #include "amazing.h"
 #include "startup.h"
 
 /**************** file-local constants ****************/
 
-int createSocket(char* hostname, uint32_t MazePort);
+int createSocket(char* hostname, uint32_t MazePort, int AvatarId );
 int sendMessage(int socket, AM_Message* message);
 AM_Message* recieveMessage(int socket) ;
+void* run_thread(void* idp);
+
+
+/**************** global variables ****************/
+
+pthread_t* threadArray;
+
 /**************** main() ****************/
 int
 main(const int argc, char *argv[])
@@ -74,53 +82,19 @@ main(const int argc, char *argv[])
   }
   time(&currTime);
   fprintf(log, "%s, %lu, %s", user, (unsigned long)MazePort, ctime(&currTime));
-  
 
- /*THREADS(all of this is in the thread method)
-  int threadReturnStatus = 0;
+  // Allocate memory for array
+  threadArray = malloc(sizeof(pthread_t)*numAva); //TODO: free memory
+  int ids[numAva];
 
-  switch(ntohl(recievedMessage->type)) {
-    case AM_AVATAR_TURN:
-      //update grpah;
-      break;
-    case AM_MAZE_SOLVED:
-      //append to log it was solved;
-      break;
-    case AM_NO_SUCH_AVATAR:
-      //
-      break;
-    case AM_UNKNOWN_MSG_TYPE:
-      fprintf(stderr, "Server recieved an unknown message of type %lu\n", (unsigned long)ntohl(recievedMessage->AM_UNKNOWN_MSG_TYPE.BadType));
-      threadReturnStatus = 3;
-      break;
-    case AM_UNEXPECTED_MSG_TYPE:
-      fprintf(stderr, "Unexpected Message\n");
-      break;
-    case AM_AVATAR_OUT_OF_TURN:
-      fprintf(stderr, "Avatar requested a move out of order.\n");
-      break;
-    case AM_TOO_MANY_MOVES:
-      fprintf(stderr, "Out of turns\n");
-      threadReturnStatus = 4;
-      break;
-    case AM_SERVER_TIMEOUT:
-      fprintf(stderr, "Server timed out\n");
-      threadReturnStatus = 5;
-      break;
-    case AM_SERVER_DISK_QUOTA:
-      fprintf(stderr, "Server encountered a disk quota error.\n");
-      break;
-    case AM_SERVER_OUT_OF_MEM:
-      fprintf(stderr, "Server was out of memory.\n");
-      threadReturnStatus = 6;
-      break;
+  for ( int i = 0; i < numAva; i++) {
+    ids[i] = i;
+    pthread_create(&threadArray[i], NULL, run_thread, &ids[i]);
   }
-  if(threadReturnStatus != 0) {
-    break;
-  }
-  */
 
   fclose(log);
+
+  pthread_exit(NULL);
 }
 
 int createSocket(char* hostname, uint32_t MazePort, int AvatarId )
@@ -191,4 +165,57 @@ AM_Message* recieveMessage(int socket)
         return fromServer;
     }
   }
+}
+
+void* run_thread(void* idp) {
+
+  int id = * (int*) idp;
+  printf("Thread %d checking in!\n", id);
+
+  int threadReturnStatus = 0;
+
+  //TODO: Add while loop that runs as long as maze is unsolved and there are moves left
+
+  switch(ntohl(recievedMessage->type)) {
+    case AM_AVATAR_TURN:
+      //update graph;
+      break;
+    case AM_MAZE_SOLVED:
+      //append to log it was solved;
+      break;
+    case AM_NO_SUCH_AVATAR:
+      //
+      break;
+    case AM_UNKNOWN_MSG_TYPE:
+      fprintf(stderr, "Server recieved an unknown message of type %lu\n", (unsigned long)ntohl(recievedMessage->unknown_msg_type.BadType));
+      threadReturnStatus = 3;
+      break;
+    case AM_UNEXPECTED_MSG_TYPE:
+      fprintf(stderr, "Unexpected Message\n");
+      break;
+    case AM_AVATAR_OUT_OF_TURN:
+      fprintf(stderr, "Avatar requested a move out of order.\n");
+      break;
+    case AM_TOO_MANY_MOVES:
+      fprintf(stderr, "Out of turns\n");
+      threadReturnStatus = 4;
+      break;
+    case AM_SERVER_TIMEOUT:
+      fprintf(stderr, "Server timed out\n");
+      threadReturnStatus = 5;
+      break;
+    case AM_SERVER_DISK_QUOTA:
+      fprintf(stderr, "Server encountered a disk quota error.\n");
+      break;
+    case AM_SERVER_OUT_OF_MEM:
+      fprintf(stderr, "Server was out of memory.\n");
+      threadReturnStatus = 6;
+      break;
+  }
+  if(threadReturnStatus != 0) {
+    // Break out of while loop
+    // break;
+  }
+
+  pthread_exit(NULL);
 }
