@@ -20,8 +20,9 @@
 
 /**************** file-local constants ****************/
 
-int sendMessage(char* hostname, uint32_t MazePort, AM_Message* message);
-AM_Message* recieveMessage(int sock) ;
+int createSocket(char* hostname, uint32_t MazePort);
+int sendMessage(int socket, AM_Message* message);
+AM_Message* recieveMessage(int socket) ;
 /**************** main() ****************/
 int
 main(const int argc, char *argv[])
@@ -117,10 +118,8 @@ main(const int argc, char *argv[])
   fclose(log);
 }
 
-int sendMessage(char* hostname, uint32_t MazePort, AM_Message* message) 
+int createSocket(char* hostname, uint32_t MazePort)
 {
-  AM_Message* toServer = message;
- 
   struct hostent *hostp = gethostbyname(hostname);
   if (hostp == NULL) {
     fprintf(stderr, "startup: unknown host '%s'\n", hostname);
@@ -146,29 +145,35 @@ int sendMessage(char* hostname, uint32_t MazePort, AM_Message* message)
     return -1;
   }
   printf("Connected!\n");
+  return comm_sock;
 
-  // 
-  if(send(comm_sock, toServer, sizeof(AM_Message), 0) == -1) {
+}
+
+int sendMessage(int socket, AM_Message* message) 
+{
+  AM_Message* toServer = message;
+ 
+  if(send(socket, toServer, sizeof(AM_Message), 0) == -1) {
     fprintf(stderr, "Message could not be sent to the server\n");
     return -1;
   } else {
-    return comm_sock;
+    return 0;
   }
 }
 
-AM_Message* recieveMessage(int sock) 
+AM_Message* recieveMessage(int socket) 
 {
   AM_Message* fromServer = malloc(sizeof(AM_Message));
   
-  if(recv(comm_sock, fromServer, sizeof(AM_Message), 0) == -1) {
+  if(recv(socket, fromServer, sizeof(AM_Message), 0) == -1) {
     fprintf(stderr, "Message could not be recieved from the server\n");
-    close(comm_sock);
+    close(socket);
     return NULL;
   } else {
       if(IS_AM_ERROR(ntohl(fromServer->type))) {
        fprintf(stderr, "An %lu error was recieved from the server.\n", ntohl(fromServer->type));
        return fromServer;
-       close(comm_sock);
+       close(socket);
       } else {
         return fromServer;
     }
