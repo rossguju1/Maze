@@ -76,7 +76,8 @@ main(const int argc, char *argv[])
   fprintf(log, "%s, %lu, %s", user, (unsigned long)MazePort, ctime(&currTime));
   
 
- //THREADS
+ /*THREADS(all of this is in the thread method)
+  int threadReturnStatus = 0;
 
   switch(ntohl(recievedMessage->type)) {
     case AM_AVATAR_TURN:
@@ -90,7 +91,7 @@ main(const int argc, char *argv[])
       break;
     case AM_UNKNOWN_MSG_TYPE:
       fprintf(stderr, "Server recieved an unknown message of type %lu\n", (unsigned long)ntohl(recievedMessage->AM_UNKNOWN_MSG_TYPE.BadType));
-      exit(3);
+      threadReturnStatus = 3;
       break;
     case AM_UNEXPECTED_MSG_TYPE:
       fprintf(stderr, "Unexpected Message\n");
@@ -100,20 +101,24 @@ main(const int argc, char *argv[])
       break;
     case AM_TOO_MANY_MOVES:
       fprintf(stderr, "Out of turns\n");
-      exit(3);
+      threadReturnStatus = 4;
       break;
     case AM_SERVER_TIMEOUT:
       fprintf(stderr, "Server timed out\n");
-      exit(3);
+      threadReturnStatus = 5;
       break;
     case AM_SERVER_DISK_QUOTA:
       fprintf(stderr, "Server encountered a disk quota error.\n");
       break;
     case AM_SERVER_OUT_OF_MEM:
       fprintf(stderr, "Server was out of memory.\n");
-      exit(3);
+      threadReturnStatus = 6;
       break;
   }
+  if(threadReturnStatus != 0) {
+    break;
+  }
+  */
 
   fclose(log);
 }
@@ -171,7 +176,7 @@ AM_Message* recieveMessage(int socket)
     return NULL;
   } else {
       if(IS_AM_ERROR(ntohl(fromServer->type))) {
-       fprintf(stderr, "An %lu error was recieved from the server.\n", ntohl(fromServer->type));
+       fprintf(stderr, "An %lu error was recieved from the server.\n", (unsigned long)ntohl(fromServer->type));
        return fromServer;
        close(socket);
       } else {
