@@ -123,7 +123,7 @@ main(const int argc, char *argv[])
   fclose(log);
 }
 
-int createSocket(char* hostname, uint32_t MazePort)
+int createSocket(char* hostname, uint32_t MazePort, int AvatarId )
 {
   struct hostent *hostp = gethostbyname(hostname);
   if (hostp == NULL) {
@@ -150,6 +150,14 @@ int createSocket(char* hostname, uint32_t MazePort)
     return -1;
   }
   printf("Connected!\n");
+
+
+	// Send the Avatar's first message: AM_AVATAR_READY
+	AM_Message message_AM_AVATAR_READY;
+	message_AM_AVATAR_READY.type = AM_AVATAR_READY;
+	message_AM_AVATAR_READY.AvatarId = threadArray[AvatarId];
+	// TODO: create a global array of the threads named `threadArray`
+
   return comm_sock;
 
 }
