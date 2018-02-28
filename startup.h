@@ -1,5 +1,14 @@
 
-
+/*
+ *	startup.h - a header file for connecting to the maze-server.
+ *
+ *	`startup` creates a socket and connects to the server hosting the maze.
+ *	It then sends an AM_Message of type AM_INIT.
+ *	If the AM_INIT message was well-formed, and contained the correct values,
+ *	the server should then respond with its own AM_Message, AM_INIT_OK,
+ *	which `startup` will return by value.
+ *
+ */
 
 #ifndef __STARTUP_H
 #define __STARTUP_H
