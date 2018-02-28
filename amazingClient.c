@@ -175,47 +175,49 @@ void* run_thread(void* idp) {
   int threadReturnStatus = 0;
 
   //TODO: Add while loop that runs as long as maze is unsolved and there are moves left
+  //while (  ) {
+     switch(ntohl(recievedMessage->type)) {
+       case AM_AVATAR_TURN:
+         //update graph;
+         break;
+       case AM_MAZE_SOLVED:
+         //append to log it was solved;
+         break;
+       case AM_NO_SUCH_AVATAR:
+         //
+         break;
+       case AM_UNKNOWN_MSG_TYPE:
+         fprintf(stderr, "Server recieved an unknown message of type %lu\n", (unsigned long)ntohl(recievedMessage->unknown_msg_type.BadType));
+         threadReturnStatus = 3;
+         break;
+       case AM_UNEXPECTED_MSG_TYPE:
+         fprintf(stderr, "Unexpected Message\n");
+         break;
+       case AM_AVATAR_OUT_OF_TURN:
+         fprintf(stderr, "Avatar requested a move out of order.\n");
+         break;
+       case AM_TOO_MANY_MOVES:
+         fprintf(stderr, "Out of turns\n");
+         threadReturnStatus = 4;
+         break;
+       case AM_SERVER_TIMEOUT:
+         fprintf(stderr, "Server timed out\n");
+         threadReturnStatus = 5;
+         break;
+       case AM_SERVER_DISK_QUOTA:
+         fprintf(stderr, "Server encountered a disk quota error.\n");
+         break;
+       case AM_SERVER_OUT_OF_MEM:
+         fprintf(stderr, "Server was out of memory.\n");
+         threadReturnStatus = 6;
+         break;
+     }
 
-  switch(ntohl(recievedMessage->type)) {
-    case AM_AVATAR_TURN:
-      //update graph;
-      break;
-    case AM_MAZE_SOLVED:
-      //append to log it was solved;
-      break;
-    case AM_NO_SUCH_AVATAR:
-      //
-      break;
-    case AM_UNKNOWN_MSG_TYPE:
-      fprintf(stderr, "Server recieved an unknown message of type %lu\n", (unsigned long)ntohl(recievedMessage->unknown_msg_type.BadType));
-      threadReturnStatus = 3;
-      break;
-    case AM_UNEXPECTED_MSG_TYPE:
-      fprintf(stderr, "Unexpected Message\n");
-      break;
-    case AM_AVATAR_OUT_OF_TURN:
-      fprintf(stderr, "Avatar requested a move out of order.\n");
-      break;
-    case AM_TOO_MANY_MOVES:
-      fprintf(stderr, "Out of turns\n");
-      threadReturnStatus = 4;
-      break;
-    case AM_SERVER_TIMEOUT:
-      fprintf(stderr, "Server timed out\n");
-      threadReturnStatus = 5;
-      break;
-    case AM_SERVER_DISK_QUOTA:
-      fprintf(stderr, "Server encountered a disk quota error.\n");
-      break;
-    case AM_SERVER_OUT_OF_MEM:
-      fprintf(stderr, "Server was out of memory.\n");
-      threadReturnStatus = 6;
-      break;
-  }
-  if(threadReturnStatus != 0) {
-    // Break out of while loop
-    // break;
-  }
+     if(threadReturnStatus != 0) {
+       // Break out of while loop
+       //break;
+     }
+  //} 
 
   pthread_exit(NULL);
 }
