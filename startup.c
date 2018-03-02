@@ -1,5 +1,5 @@
 /* 
- * statup.c - module to connect to the server with the number of avatars and the difficulty
+ * startup.c - module to connect to the server with the number of avatars and the difficulty
  *
  * Makes a connection to the given host/port and sends a AM_INIT message
  * recieves AM_INIT_OK and returns the MazePort, MazeHeight, and MazeWidth to the server

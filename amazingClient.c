@@ -1,4 +1,4 @@
-/* 
+/* /threa
  * amazingClient - Connects to the server and starts each thread to represent Avatars and solve the maze 
  *
  * 
@@ -23,7 +23,7 @@
 
 int createSocket(char* hostname, uint32_t MazePort, int AvatarId );
 int sendMessage(int socket, AM_Message* message);
-AM_Message* recieveMessage(int socket) ;
+AM_Message* receiveMessage(int socket) ;
 void* run_thread(void* idp);
 
 
@@ -42,7 +42,7 @@ main(const int argc, char *argv[])
   int numAva;
   int diff;
   AM_Message* initRecvMessage;
-  AM_Message* recievedMessage;
+  AM_Message* receivedMessage;
   FILE* log;
   uint32_t MazePort;
   uint32_t MazeWidth;
@@ -90,6 +90,10 @@ main(const int argc, char *argv[])
   for ( int i = 0; i < numAva; i++) {
     ids[i] = i;
     pthread_create(&threadArray[i], NULL, run_thread, &ids[i]);
+  }
+
+  for ( int j = 0; j < numAva; j++ ) {
+    pthread_join(threadArray[j])
   }
 
   fclose(log);
@@ -148,17 +152,17 @@ int sendMessage(int socket, AM_Message* message)
   }
 }
 
-AM_Message* recieveMessage(int socket) 
+AM_Message* receiveMessage(int socket) 
 {
   AM_Message* fromServer = malloc(sizeof(AM_Message));
   
   if(recv(socket, fromServer, sizeof(AM_Message), 0) == -1) {
-    fprintf(stderr, "Message could not be recieved from the server\n");
+    fprintf(stderr, "Message could not be received from the server\n");
     close(socket);
     return NULL;
   } else {
       if(IS_AM_ERROR(ntohl(fromServer->type))) {
-       fprintf(stderr, "An %lu error was recieved from the server.\n", (unsigned long)ntohl(fromServer->type));
+       fprintf(stderr, "An %lu error was received from the server.\n", (unsigned long)ntohl(fromServer->type));
        return fromServer;
        close(socket);
       } else {
@@ -176,7 +180,7 @@ void* run_thread(void* idp) {
 
   //TODO: Add while loop that runs as long as maze is unsolved and there are moves left
   //while (  ) {
-     switch(ntohl(recievedMessage->type)) {
+     switch(ntohl(receivedMessage->type)) {
        case AM_AVATAR_TURN:
          //update graph;
          break;
@@ -187,7 +191,7 @@ void* run_thread(void* idp) {
          //
          break;
        case AM_UNKNOWN_MSG_TYPE:
-         fprintf(stderr, "Server recieved an unknown message of type %lu\n", (unsigned long)ntohl(recievedMessage->unknown_msg_type.BadType));
+         fprintf(stderr, "Server received an unknown message of type %lu\n", (unsigned long)ntohl(receivedMessage->unknown_msg_type.BadType));
          threadReturnStatus = 3;
          break;
        case AM_UNEXPECTED_MSG_TYPE:
