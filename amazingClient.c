@@ -30,21 +30,22 @@ void* run_thread(void* idp);
 /**************** global variables ****************/
 
 pthread_t* threadArray;
-
+char *hostname;       // server hostname
+uint32_t MazePort;
+pthread_mutex_t mutex;
 /**************** main() ****************/
 int
 main(const int argc, char *argv[])
 {
   char *program;        // this program's name
-  char *hostname;       // server hostname
+  
   char* user;
   int port;         // initial server port
   int numAva;
   int diff;
   AM_Message* initRecvMessage;
-  AM_Message* receivedMessage;
   FILE* log;
-  uint32_t MazePort;
+  
   uint32_t MazeWidth;
   uint32_t MazeHeight;
   time_t currTime;
@@ -93,7 +94,7 @@ main(const int argc, char *argv[])
   }
 
   for ( int j = 0; j < numAva; j++ ) {
-    pthread_join(threadArray[j])
+    pthread_join(threadArray[j], NULL);
   }
 
   fclose(log);
@@ -103,6 +104,7 @@ main(const int argc, char *argv[])
 
 int createSocket(char* hostname, uint32_t MazePort, int AvatarId )
 {
+  AM_Message readyMessage;
   struct hostent *hostp = gethostbyname(hostname);
   if (hostp == NULL) {
     fprintf(stderr, "startup: unknown host '%s'\n", hostname);
@@ -127,14 +129,17 @@ int createSocket(char* hostname, uint32_t MazePort, int AvatarId )
     perror("connecting stream socket");
     return -1;
   }
-  printf("Connected!\n");
+  printf("Avatar %d connected to our maze's port! Its socket number is %d\n", AvatarId, comm_sock);
 
 
 	// Send the Avatar's first message: AM_AVATAR_READY
-	AM_Message message_AM_AVATAR_READY;
-	message_AM_AVATAR_READY.type = AM_AVATAR_READY;
-	message_AM_AVATAR_READY.avatar_ready.AvatarId = threadArray[AvatarId];
-	// TODO: create a global array of the threads named `threadArray`
+	
+	readyMessage.type = htonl(AM_AVATAR_READY);
+	readyMessage.avatar_ready.AvatarId = htonl(AvatarId);
+	
+  if(sendMessage(comm_sock, &readyMessage) == -1){
+    return -2;
+  }
 
   return comm_sock;
 
@@ -175,13 +180,21 @@ void* run_thread(void* idp) {
 
   int id = * (int*) idp;
   printf("Thread %d checking in!\n", id);
+  AM_Message* receivedMessage;
 
+  pthread_mutex_lock(&mutex);
+  int avatarSocket = createSocket(hostname, MazePort, id);
+  pthread_mutex_unlock(&mutex);
   int threadReturnStatus = 0;
+  
 
   //TODO: Add while loop that runs as long as maze is unsolved and there are moves left
-  //while (  ) {
-     switch(ntohl(receivedMessage->type)) {
+  while (1) {
+    receivedMessage = receiveMessage(avatarSocket);
+    if(receivedMessage != NULL) {
+      switch(ntohl(receivedMessage->type)) {
        case AM_AVATAR_TURN:
+         printf("received turn message\n");
          //update graph;
          break;
        case AM_MAZE_SOLVED:
@@ -216,12 +229,14 @@ void* run_thread(void* idp) {
          threadReturnStatus = 6;
          break;
      }
-
-     if(threadReturnStatus != 0) {
-       // Break out of while loop
-       //break;
+     
+   }
+   if(threadReturnStatus != 0) {
+     // Break out of while loop
+      break;
      }
-  //} 
+     break;
+  } 
 
   pthread_exit(NULL);
 }
