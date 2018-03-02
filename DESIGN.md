@@ -59,6 +59,6 @@
 		* set desiredDirection to the right of the direction the avatar is facing
 		* Check if an edge exists in the graph from current position to the the desired direction
 			* If so,
-				* Send a request to move in that direction
+				* Send a request to move in that direction and update yourself to be facing that way
 			* If not, update the desiredDirection counter-clockwise around a compass rose (ie, East updates to North)
 

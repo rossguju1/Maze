@@ -72,8 +72,8 @@ main(const int argc, char *argv[])
   if(initRecvMessage != NULL) {
     if(ntohl(initRecvMessage->type) == AM_INIT_OK) {
       MazePort = ntohl(initRecvMessage->init_ok.MazePort);
-      MazeWidth = ntohl(initRecvMessage->init_ok.MazeWidth);
-      MazeHeight = ntohl(initRecvMessage->init_ok.MazeHeight);
+      //MazeWidth = ntohl(initRecvMessage->init_ok.MazeWidth);
+      //MazeHeight = ntohl(initRecvMessage->init_ok.MazeHeight);
     }
     free(initRecvMessage);
   }
@@ -167,7 +167,7 @@ AM_Message* receiveMessage(int socket)
     return NULL;
   } else {
       if(IS_AM_ERROR(ntohl(fromServer->type))) {
-       fprintf(stderr, "An %lu error was received from the server.\n", (unsigned long)ntohl(fromServer->type));
+       fprintf(stderr, "An error was received from the server.\n");
        return fromServer;
        close(socket);
       } else {
@@ -194,11 +194,33 @@ void* run_thread(void* idp) {
     if(receivedMessage != NULL) {
       switch(ntohl(receivedMessage->type)) {
        case AM_AVATAR_TURN:
-         printf("received turn message\n");
-         //update graph;
+         printf("%d received turn message\n", id);
+         if(ntohl(receivedMessage->avatar_turn.TurnId) == id){
+          printf("Turn of %d id\n", id);
+          AM_Message turnMe;
+          turnMe.type = htonl(AM_AVATAR_MOVE);
+          turnMe.avatar_move.AvatarId = htonl(id);
+          int direction = rand()%3;
+          if(direction == 0) {
+            turnMe.avatar_move.Direction = htonl(M_WEST);
+          }
+          if(direction == 1) {
+            turnMe.avatar_move.Direction = htonl(M_NORTH);
+          }
+          if(direction == 0) {
+            turnMe.avatar_move.Direction = htonl(M_SOUTH);
+          }
+          if(direction == 0) {
+            turnMe.avatar_move.Direction = htonl(M_EAST);
+          }
+          
+          sendMessage(avatarSocket, &turnMe);
+         }
          break;
        case AM_MAZE_SOLVED:
-         //append to log it was solved;
+        //append to log it was solved;
+          printf("Maze was solved\n");
+          threadReturnStatus = 1;
          break;
        case AM_NO_SUCH_AVATAR:
          //
@@ -235,7 +257,7 @@ void* run_thread(void* idp) {
      // Break out of while loop
       break;
      }
-     break;
+
   } 
 
   pthread_exit(NULL);
