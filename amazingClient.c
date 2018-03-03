@@ -18,6 +18,7 @@
 #include <pthread.h>
 #include "amazing.h"
 #include "startup.h"
+#include "localMaze.h"
 
 /**************** file-local constants ****************/
 
@@ -49,6 +50,7 @@ main(const int argc, char *argv[])
   uint32_t MazeWidth;
   uint32_t MazeHeight;
   time_t currTime;
+  MazeMap_t* map;
     
   // check arguments
   program = argv[0];
@@ -72,8 +74,8 @@ main(const int argc, char *argv[])
   if(initRecvMessage != NULL) {
     if(ntohl(initRecvMessage->type) == AM_INIT_OK) {
       MazePort = ntohl(initRecvMessage->init_ok.MazePort);
-      //MazeWidth = ntohl(initRecvMessage->init_ok.MazeWidth);
-      //MazeHeight = ntohl(initRecvMessage->init_ok.MazeHeight);
+      MazeWidth = ntohl(initRecvMessage->init_ok.MazeWidth);
+      MazeHeight = ntohl(initRecvMessage->init_ok.MazeHeight);
     }
     free(initRecvMessage);
   }
@@ -81,6 +83,10 @@ main(const int argc, char *argv[])
     fprintf(stderr, "Could not initialize Maze\n");
     exit(2);
   }
+
+  map = initMazeMap((int)MazeWidth, (int) MazeHeight);
+
+
   time(&currTime);
   fprintf(log, "%s, %lu, %s", user, (unsigned long)MazePort, ctime(&currTime));
 

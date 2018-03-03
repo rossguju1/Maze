@@ -7,7 +7,8 @@
 #include <sys/socket.h>          
 #include <arpa/inet.h>
 #include <string.h>                        
-#include <pthread.h>     
+#include <pthread.h> 
+#include <localMaze.h>    
 
 // The avatar structure should have some kind of x-y position variable like xyPosition so that we can keep track of its x-y coordinates
 
