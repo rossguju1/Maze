@@ -198,7 +198,7 @@ void* run_thread(void* idp) {
   int threadReturnStatus = 0;
   
 
-  //TODO: Add while loop that runs as long as maze is unsolved and there are moves left
+  //while loop runs as long as maze is unsolved and there are moves left, and no errors have occurred
   while (1) {
     receivedMessage = receiveMessage(avatarSocket);
     if(receivedMessage != NULL) {
