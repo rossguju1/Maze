@@ -29,7 +29,7 @@ void* run_thread(void* idp);
 
 
 /**************** global variables ****************/
-
+MazeMap_t* mazeMap;
 pthread_t* threadArray;
 char *hostname;       // server hostname
 uint32_t MazePort;
@@ -50,8 +50,8 @@ main(const int argc, char *argv[])
   uint32_t MazeWidth;
   uint32_t MazeHeight;
   time_t currTime;
-  MazeMap_t* map;
-    
+  
+  int threadReturn;
   // check arguments
   program = argv[0];
   if (argc != 7) {
@@ -84,9 +84,9 @@ main(const int argc, char *argv[])
     exit(2);
   }
 
-  map = initMazeMap((int)MazeWidth, (int) MazeHeight);
+  mazeMap = initMazeMap((int)MazeWidth, (int) MazeHeight);
 
-
+  
   time(&currTime);
   fprintf(log, "%s, %lu, %s", user, (unsigned long)MazePort, ctime(&currTime));
 
@@ -100,12 +100,14 @@ main(const int argc, char *argv[])
   }
 
   for ( int j = 0; j < numAva; j++ ) {
-    pthread_join(threadArray[j], NULL);
+    pthread_join(threadArray[j], (void**)&threadReturn);
   }
 
+  printf("%d\n", threadReturn);
+  if(threadReturn == 1) {
+    printf("YUSSS We solved it\n");
+  }
   fclose(log);
-
-  pthread_exit(NULL);
 }
 
 int createSocket(char* hostname, uint32_t MazePort, int AvatarId )
@@ -187,7 +189,9 @@ void* run_thread(void* idp) {
   int id = * (int*) idp;
   printf("Thread %d checking in!\n", id);
   AM_Message* receivedMessage;
-
+  int pos= -1;
+  int dir = 0;   //directions: north=0,east=1,south=2,west=3;
+  int desiredDir = 0;
   pthread_mutex_lock(&mutex);
   int avatarSocket = createSocket(hostname, MazePort, id);
   pthread_mutex_unlock(&mutex);
@@ -202,22 +206,64 @@ void* run_thread(void* idp) {
        case AM_AVATAR_TURN:
          printf("%d received turn message\n", id);
          if(ntohl(receivedMessage->avatar_turn.TurnId) == id){
-          printf("Turn of %d id\n", id);
+          printf("Turn of %d id. x pos is %d, y pos is %d\n", id, ntohl(receivedMessage->avatar_turn.Pos[id].x), ntohl(receivedMessage->avatar_turn.Pos[id].y));
           AM_Message turnMe;
           turnMe.type = htonl(AM_AVATAR_MOVE);
           turnMe.avatar_move.AvatarId = htonl(id);
-          int direction = rand()%3;
-          if(direction == 0) {
-            turnMe.avatar_move.Direction = htonl(M_WEST);
+          int serverPos = ntohl(receivedMessage->avatar_turn.Pos[id].x) * getWidth(mazeMap) + ntohl(receivedMessage->avatar_turn.Pos[id].y);
+          char* mapDir;
+          if(desiredDir == 0) {
+            mapDir = "north";
+          } else if(desiredDir == 1) {
+            mapDir = "east";
+          } else if(desiredDir == 2) {
+            mapDir = "south";
+          } else if(desiredDir == 3) {
+            mapDir = "west";
           }
-          if(direction == 1) {
+          if(serverPos == ((getWidth(mazeMap))*(getHeight(mazeMap))/2+1)) {
+            turnMe.avatar_move.Direction = htonl(M_NULL_MOVE);
+          } else if(pos == -1) {
+            pos = serverPos;
+          } else if (pos != serverPos) {
+            if(serverPos == pos-getWidth(mazeMap)) {
+              dir = 0;
+            }
+            if(serverPos == pos+1) {
+              dir = 1;
+            }
+            if(serverPos == pos+getWidth(mazeMap)) {
+              dir = 2;
+            }
+            if(serverPos == pos-1) {
+              dir = 3;
+            }
+            pos = serverPos;
+          } else {
+              setMapWall(mazeMap, serverPos, mapDir);
+              
+          }
+          desiredDir = (dir+1)%3;
+          while(getMapWall(mazeMap, serverPos, mapDir) == 1) {
+            desiredDir = (desiredDir+1)%3;
+            if(desiredDir == 0) {
+              mapDir = "north";
+            } else if(desiredDir == 1) {
+              mapDir = "east";
+            } else if(desiredDir == 2) {
+              mapDir = "south";
+            } else if(desiredDir == 3) {
+              mapDir = "west";
+            }
+          }
+          if(desiredDir == 0) {
             turnMe.avatar_move.Direction = htonl(M_NORTH);
-          }
-          if(direction == 0) {
-            turnMe.avatar_move.Direction = htonl(M_SOUTH);
-          }
-          if(direction == 0) {
+          } else if(desiredDir == 1) {
             turnMe.avatar_move.Direction = htonl(M_EAST);
+          } else if(desiredDir == 2) {
+            turnMe.avatar_move.Direction = htonl(M_SOUTH);
+          } else if(desiredDir == 3) {
+            turnMe.avatar_move.Direction = htonl(M_WEST);
           }
           
           sendMessage(avatarSocket, &turnMe);
@@ -229,7 +275,7 @@ void* run_thread(void* idp) {
           threadReturnStatus = 1;
          break;
        case AM_NO_SUCH_AVATAR:
-         //
+         threadReturnStatus = 2;
          break;
        case AM_UNKNOWN_MSG_TYPE:
          fprintf(stderr, "Server received an unknown message of type %lu\n", (unsigned long)ntohl(receivedMessage->unknown_msg_type.BadType));
@@ -266,5 +312,5 @@ void* run_thread(void* idp) {
 
   } 
 
-  pthread_exit(NULL);
+  pthread_exit(&threadReturnStatus);
 }
