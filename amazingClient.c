@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <unistd.h>       // read, write, close
 #include <strings.h>        // bcopy, bzero
+#include <string.h>
 #include <netdb.h>        // socket-related structures
 #include <time.h>
 #include <pthread.h>
@@ -89,6 +90,7 @@ main(const int argc, char *argv[])
   
   time(&currTime);
   fprintf(log, "%s, %lu, %s", user, (unsigned long)MazePort, ctime(&currTime));
+  fclose(log); //TODO undo this
 
   // Allocate memory for array
   threadArray = malloc(sizeof(pthread_t)*numAva); //TODO: free memory
@@ -107,7 +109,7 @@ main(const int argc, char *argv[])
   if(threadReturn == 1) {
     printf("YUSSS We solved it\n");
   }
-  fclose(log);
+  //fclose(log);
 }
 
 int createSocket(char* hostname, uint32_t MazePort, int AvatarId )
@@ -219,7 +221,7 @@ void* run_thread(void* idp) {
 
 			 // If we received the right type of message,
        case AM_AVATAR_TURN:
-         printf("%d received turn message\n", id);
+         //printf("%d received turn message\n", id);
          if(ntohl(receivedMessage->avatar_turn.TurnId) == id){
           printf("Turn of %d id. x pos is %d, y pos is %d\n", id, ntohl(receivedMessage->avatar_turn.Pos[id].x), ntohl(receivedMessage->avatar_turn.Pos[id].y));
 
@@ -227,22 +229,21 @@ void* run_thread(void* idp) {
           AM_Message turnMe;
           turnMe.type = htonl(AM_AVATAR_MOVE);
           turnMe.avatar_move.AvatarId = htonl(id);
-					
 
 					// Gets the current position of the avatar
           serverPos = ntohl(receivedMessage->avatar_turn.Pos[id].x) * getWidth(mazeMap) + ntohl(receivedMessage->avatar_turn.Pos[id].y);
 
-
+          // we never store mapDir in any other variable
 					// Converts the representation of the Direction to a string, for better readability
           char mapDir[10];
           if(desiredDir == 0) {
-            mapDir = "north";
+            strcpy(mapDir,"north");
           } else if(desiredDir == 1) {
-            mapDir = "east";
+            strcpy(mapDir,"east");
           } else if(desiredDir == 2) {
-            mapDir = "south";
+            strcpy(mapDir,"south");
           } else if(desiredDir == 3) {
-            mapDir = "west";
+            strcpy(mapDir,"west");
           }
 
 
@@ -257,6 +258,7 @@ void* run_thread(void* idp) {
           } 
 
 					/***********THE RIGHT-HAND RULE**********/
+
 					// If the Avatar moved,				
 					else if (pos != serverPos) {
 
@@ -282,9 +284,10 @@ void* run_thread(void* idp) {
           }
 
 					// Works out the next Desired Direction
-          desiredDir = (dir+1)%3;
+          desiredDir = (dir+1)%3; // checks 90 degrees clockwise 
           while(getMapWall(mazeMap, serverPos, mapDir) == 1) {
-            desiredDir = (desiredDir+1)%3;
+
+            desiredDir = (desiredDir-1)%3; //turns desired direction 90 degrees counter clockwise
             if(desiredDir == 0) {
               strcpy( mapDir, "north");
             } else if(desiredDir == 1) {
