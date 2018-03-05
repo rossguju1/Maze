@@ -124,3 +124,17 @@ int getMapWall(MazeMap_t* maze, int pos, int dir)
   else return -1;
 }
 
+void deleteMaze(MazeMap_t* map)
+{
+  if(map != NULL) {
+    if (map->map != NULL) {
+      for(int i = 0; i < map->width*map->height; i++) {
+        if(map->map[i] != NULL) {
+          free(map->map[i]);
+        }
+      }
+      free(map->map);
+    }
+    free(map);                 // finally, free the MazeMap struct
+  }
+}

@@ -109,7 +109,9 @@ main(const int argc, char *argv[])
   if(*threadReturn == 1) {
     printf("YUSSS We solved it\n");
   }
-  //fclose(log);
+
+  deleteMaze(mazeMap);
+  fclose(log);
 }
 
 int createSocket(char* hostname, uint32_t MazePort, int AvatarId )
@@ -214,7 +216,7 @@ void* run_thread(void* idp) {
           turnMe.avatar_move.AvatarId = htonl(id);
           int serverPos = ntohl(receivedMessage->avatar_turn.Pos[id].y) * getWidth(mazeMap) + ntohl(receivedMessage->avatar_turn.Pos[id].x);
 
-          if(serverPos == ((getWidth(mazeMap))*(getHeight(mazeMap))/2+1)) {
+          if(serverPos == (getWidth(mazeMap))*(getHeight(mazeMap)/2)+(getWidth(mazeMap)/2)) {
             turnMe.avatar_move.Direction = htonl(M_NULL_MOVE);
           } else if(pos == -1) {
             pos = serverPos;
@@ -286,6 +288,8 @@ void* run_thread(void* idp) {
          threadReturnStatus = 6;
          break;
      }
+     free(receivedMessage);
+
      
    }
    if(threadReturnStatus != 0) {
