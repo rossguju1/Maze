@@ -1,19 +1,20 @@
 #!/bin/bash
 #
-# AMStartup.sh - parses arguments, connects to the server, and initializes n Avatars 
-#
+# AMStartup.sh - parses arguments, and calls amazingClient with the proper arguments
 # usage: AMStartup.sh -n nAvatars -d Difficulty -h Hostname
 #	where nAvatars is an int
 #	Difficulty is a int
 #	Hostname is a char*
 #
 # input: only command line arguments
-# output: a log file with that holds each requested move and whether or no the move succeeded
+# output: a log file with that holds the output of a maze solution
 #
 # Amazing Challenge
-# Group 8, February 21, 2018
+# Group 8, Rachel Martin, Steven Karson, Ross Guju, Raphael Brantley, February 21, 2018
 
 options_found=0
+
+#checks to make sure each flag and parameter is given
 
 while getopts :n:d:h: opt; do
   case $opt in
@@ -47,12 +48,8 @@ fi
 
 echo $USER
 
+#calls amazingClient with the arguments given and the proper name of the log file
 ./amazingClient $Hostname 17235 $nAvatars $Difficulty "Amazing_""$USER""_""$nAvatars""_""$Difficulty".log $USER
-
-##if [[ Error -gt 0 && Error -lt 7 ]]; then 
-##	echo "Error initializing maze." >&2
-##	exit 2
-##fi
 
 
 

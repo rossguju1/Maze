@@ -1,16 +1,16 @@
-/* /threa
+/* 
  * amazingClient - Connects to the server and starts each thread to represent Avatars and solve the maze 
- *
  * 
  * usage: ./amazingClient Hostname 17235 nAvatars Difficulty logname user
-
  * 
- * Rachel Martin, Raphael Brantley, Steven, Ross Guju
+ * Amazing Challenge
+ * Group 8, Rachel Martin, Steven Karson, Ross Guju, Raphael Brantley, March 8, 2018 
  * Adapted from David Kotz inclient.c
  */
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <unistd.h>       // read, write, close
 #include <string.h>
 #include <strings.h>        // bcopy, bzero
@@ -21,9 +21,9 @@
 #include "startup.h"
 #include "localMaze.h"
 
-/**************** file-local constants ****************/
+/**************** function declarations ****************/
 
-int createSocket(char* hostname, uint32_t MazePort, int AvatarId );
+int createSocket(char* hostname, uint32_t MazePort, int AvatarId );     //creates the maze's connection to the server
 int sendMessage(int socket, AM_Message* message);
 AM_Message* receiveMessage(int socket) ;
 void* run_thread(void* idp);
@@ -35,6 +35,7 @@ pthread_t* threadArray;
 char *hostname;       // server hostname
 uint32_t MazePort;
 pthread_mutex_t mutex;
+FILE* logfile;
 /**************** main() ****************/
 int
 main(const int argc, char *argv[])
@@ -46,7 +47,7 @@ main(const int argc, char *argv[])
   int numAva;
   int diff;
   AM_Message* initRecvMessage;
-  FILE* log;
+  
   
   uint32_t MazeWidth;
   uint32_t MazeHeight;
@@ -65,8 +66,8 @@ main(const int argc, char *argv[])
     diff = atoi(argv[4]);
     user = argv[6];
   }
-  log = fopen(argv[5], "w");
-  if(log == NULL) {
+  logfile = fopen(argv[5], "w");
+  if(logfile == NULL) {
     fprintf(stderr, "Could not open log\n");
     exit(1);
   }
@@ -89,9 +90,10 @@ main(const int argc, char *argv[])
 
   
   time(&currTime);
-  fprintf(log, "%s, %lu, %s", user, (unsigned long)MazePort, ctime(&currTime));
-  fclose(log);
+  fprintf(logfile, "%s, %lu, %s", user, (unsigned long)MazePort, ctime(&currTime));
+  fclose(logfile);
 
+  logfile = fopen(argv[5], "a");
   // Allocate memory for array
   threadArray = malloc(sizeof(pthread_t)*numAva); //TODO: free memory
   int ids[numAva];
@@ -109,11 +111,16 @@ main(const int argc, char *argv[])
   if(*threadReturn == 1) {
     printf("YUSSS We solved it\n");
   }
-
+  fclose(logfile);
   deleteMaze(mazeMap);
-  fclose(log);
+  
 }
 
+/*
+ * createSocket()- creates a connection for each Avatar to the server at the port specified by the AM_INIT_OK message recieved from AM_connect()
+ *                 also sends the AM_AVATAR_READY message for the avatar calling it
+    returns an integer which is the file descriptor of the socket for the avatar
+*/
 int createSocket(char* hostname, uint32_t MazePort, int AvatarId )
 {
   AM_Message readyMessage;
@@ -157,6 +164,10 @@ int createSocket(char* hostname, uint32_t MazePort, int AvatarId )
 
 }
 
+/*
+ * sendMessage()- sends an AM_Message passed as an argument to the socket specified
+    returns 0 if the message sent and -1 if the message could not be sent
+*/
 int sendMessage(int socket, AM_Message* message) 
 {
   AM_Message* toServer = message;
@@ -169,6 +180,11 @@ int sendMessage(int socket, AM_Message* message)
   }
 }
 
+/*
+ * recieveMessage()- Recieves a message from the server through the socket specified
+      returns the message recieved from the server
+      closes the socket when an error occurs of the maze was solved
+*/
 AM_Message* receiveMessage(int socket) 
 {
   AM_Message* fromServer = malloc(sizeof(AM_Message));
@@ -178,49 +194,68 @@ AM_Message* receiveMessage(int socket)
     close(socket);
     return NULL;
   } else {
-      if(IS_AM_ERROR(ntohl(fromServer->type))) {
-       fprintf(stderr, "An error was received from the server.\n");
-       return fromServer;
-       close(socket);
-      } else {
-        return fromServer;
+    if(IS_AM_ERROR(ntohl(fromServer->type))) {                          //if the message is any type of error
+     fprintf(stderr, "An error was received from the server.\n");       //print to stderr that an error was recieved and close the socket
+     return fromServer;
+     close(socket);
+    } else {
+      if(ntohl(fromServer->type) == AM_MAZE_SOLVED) {                   //if the maze has been solved
+        close(socket);                                                  //make sure to close the socket
+      }
+      return fromServer;
     }
   }
 }
 
+/*
+ * run_thread()- the function run by all threads, each identified by their id passed as an argument
+ *                creates an avatars personal socket with the server by calling createSocket
+                  until an error is recieved or the maze is solved,
+                  receives messages from the server and sends move messages on its turn
+                  also logs the progress of each avatar
+                  follows the right hand rule
+      exits with a unique code indicating whether the maze was solved or what error occured.
+*/
 void* run_thread(void* idp) {
 
   int id = * (int*) idp;
+  bool madeSocket = true;
   printf("Thread %d checking in!\n", id);
   AM_Message* receivedMessage;
-  int pos= -1;
+  int pos= -1;   //position of the avatar in the maze numbering each cell from 0 to (width*height) going from left to right and then down each row
   int dir = 0;   //directions: north=0,east=1,south=2,west=3;
   int desiredDir = 1;
+  int threadReturnStatus = 0;     //indicates whether the maze was solved or an error occured
   pthread_mutex_lock(&mutex);
-  int avatarSocket = createSocket(hostname, MazePort, id);
+  int avatarSocket = createSocket(hostname, MazePort, id);    //creates the avatars socket and sends the AVATAR_READY message
   pthread_mutex_unlock(&mutex);
-  int threadReturnStatus = 0;
+  if(avatarSocket == -1) {                                //if there was a problem creating the socket or sending the AVATAR_READY message
+    threadReturnStatus = 7;
+    madeSocket = false;
+  }
   
-
-  //TODO: Add while loop that runs as long as maze is unsolved and there are moves left
-  while (1) {
+  //until the maze is solved or an error message occurs, recieve a message and send a message on your turn
+  while (madeSocket) {
     receivedMessage = receiveMessage(avatarSocket);
     if(receivedMessage != NULL) {
       switch(ntohl(receivedMessage->type)) {
        case AM_AVATAR_TURN:
          printf("%d received turn message\n", id);
-         if(ntohl(receivedMessage->avatar_turn.TurnId) == id){
+         if(ntohl(receivedMessage->avatar_turn.TurnId) == id){                    //if it is your turn
           printf("Turn of %d id. x pos is %d, y pos is %d\n", id, ntohl(receivedMessage->avatar_turn.Pos[id].x), ntohl(receivedMessage->avatar_turn.Pos[id].y));
           AM_Message turnMe;
           turnMe.type = htonl(AM_AVATAR_MOVE);
           turnMe.avatar_move.AvatarId = htonl(id);
           int serverPos = ntohl(receivedMessage->avatar_turn.Pos[id].y) * getWidth(mazeMap) + ntohl(receivedMessage->avatar_turn.Pos[id].x);
 
-          if(serverPos == (getWidth(mazeMap))*(getHeight(mazeMap)/2)+(getWidth(mazeMap)/2)) {
+          //check where the server says you are and if you have moved from your last turn      
+          if(serverPos == (getWidth(mazeMap))*(getHeight(mazeMap)/2)+(getWidth(mazeMap)/2)) {                   //Don't move if you are in the center of the maze
             turnMe.avatar_move.Direction = htonl(M_NULL_MOVE);
-          } else if(pos == -1) {
+            fprintf(logfile, "Avatar %d is already where it needs to be so it sent a null move request\n", id);
+          } else if(pos == -1) {                                                                //If this is the first message recieved, set your position
             pos = serverPos;
-          } else if (pos != serverPos) {
+          } else if (pos != serverPos) {                                                        //If your move was accepted,
+            fprintf(logfile, "Last move for avatar %d was accepted\n", id);                     //update the direction you are facing in your local maze
             if(serverPos == pos-getWidth(mazeMap)) {
               dir = 0;
             }
@@ -233,16 +268,19 @@ void* run_thread(void* idp) {
             if(serverPos == pos-1) {
               dir = 3;
             }
-            pos = serverPos;
-            desiredDir = (dir+1)%4;
-          } else {
+            pos = serverPos;                                                                    //and update your position
+            desiredDir = (dir+1)%4;                                                             //and desired direction
+          } else {                                                                              //If your move was rejected, put a wall in the local maze
+              fprintf(logfile, "Last move for avatar %d was into a wall\n", id);
               setMapWall(mazeMap, serverPos, desiredDir);
           }
           while(getMapWall(mazeMap, serverPos, desiredDir) == 1) {
             desiredDir = (desiredDir+7)%4;
           }
+
+          //request to move in the desired direction
           if(desiredDir == 0) {
-            turnMe.avatar_move.Direction = htonl(M_NORTH);
+            turnMe.avatar_move.Direction = htonl(M_NORTH);                                    
           } else if(desiredDir == 1) {
             turnMe.avatar_move.Direction = htonl(M_EAST);
           } else if(desiredDir == 2) {
@@ -250,12 +288,12 @@ void* run_thread(void* idp) {
           } else if(desiredDir == 3) {
             turnMe.avatar_move.Direction = htonl(M_WEST);
           }
-          
           sendMessage(avatarSocket, &turnMe);
+          fprintf(logfile, "Avatar %d sent move request: %lu\n", id, (unsigned long)ntohl(turnMe.avatar_move.Direction));
          }
          break;
+      //if maze was solved or a fatal error occured, change the thread return status
        case AM_MAZE_SOLVED:
-        //append to log it was solved;
           printf("Maze was solved\n");
           threadReturnStatus = 1;
          break;
@@ -287,18 +325,14 @@ void* run_thread(void* idp) {
          fprintf(stderr, "Server was out of memory.\n");
          threadReturnStatus = 6;
          break;
-     }
-     free(receivedMessage);
-
-     
-   }
-   if(threadReturnStatus != 0) {
-     // Break out of while loop
-      break;
-     }
-
+      }
+    free(receivedMessage);
+    }
+   //if the thread return status has been changed, exit the thread function
+    if(threadReturnStatus != 0) {
+     break;      // Break out of while loop
+    }
   } 
-
   pthread_exit(&threadReturnStatus);
 }
 
