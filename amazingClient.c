@@ -106,7 +106,7 @@ main(const int argc, char *argv[])
   for ( int j = 0; j < numAva; j++ ) {
     pthread_join(threadArray[j], (void**)&threadReturn);
   }
-
+  free(threadArray);
   printf("Thread return status is %d\n", *threadReturn);
   if(*threadReturn == 1) {
     printf("YUSSS We solved it\n");
