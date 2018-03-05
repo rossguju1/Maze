@@ -12,8 +12,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>       // read, write, close
-#include <strings.h>        // bcopy, bzero
 #include <string.h>
+#include <strings.h>        // bcopy, bzero
 #include <netdb.h>        // socket-related structures
 #include <time.h>
 #include <pthread.h>
@@ -52,7 +52,7 @@ main(const int argc, char *argv[])
   uint32_t MazeHeight;
   time_t currTime;
   
-  int threadReturn;
+  int* threadReturn;
   // check arguments
   program = argv[0];
   if (argc != 7) {
@@ -90,7 +90,7 @@ main(const int argc, char *argv[])
   
   time(&currTime);
   fprintf(log, "%s, %lu, %s", user, (unsigned long)MazePort, ctime(&currTime));
-  fclose(log); //TODO undo this
+  fclose(log);
 
   // Allocate memory for array
   threadArray = malloc(sizeof(pthread_t)*numAva); //TODO: free memory
@@ -105,8 +105,8 @@ main(const int argc, char *argv[])
     pthread_join(threadArray[j], (void**)&threadReturn);
   }
 
-  printf("%d\n", threadReturn);
-  if(threadReturn == 1) {
+  printf("Thread return status is %d\n", *threadReturn);
+  if(*threadReturn == 1) {
     printf("YUSSS We solved it\n");
   }
   //fclose(log);
@@ -186,82 +186,39 @@ AM_Message* receiveMessage(int socket)
   }
 }
 
-
-// Solves the maze!
 void* run_thread(void* idp) {
 
-	// Thread-preparation
   int id = * (int*) idp;
   printf("Thread %d checking in!\n", id);
+  AM_Message* receivedMessage;
+  int pos= -1;
+  int dir = 0;   //directions: north=0,east=1,south=2,west=3;
+  int desiredDir = 1;
   pthread_mutex_lock(&mutex);
+  int avatarSocket = createSocket(hostname, MazePort, id);
   pthread_mutex_unlock(&mutex);
   int threadReturnStatus = 0;
-
-
-	// The message received from the server
-  AM_Message* receivedMessage;
-
-
-  int pos = -1;	 			 // The index of the node
-	int serverPos = -1;  // The position of the Avatar returned by the server (also the index of the node)
-  int dir = 0;   			 // The direction that the Avatar is facing
-  int desiredDir = 0;	
-	// Directions: north=0,east=1,south=2,west=3;
   
 
-	// The socket we will use to communicate
-  int avatarSocket = createSocket(hostname, MazePort, id);
-
-
-  //while loop runs as long as maze is unsolved and there are moves left, and no errors have occurred
+  //TODO: Add while loop that runs as long as maze is unsolved and there are moves left
   while (1) {
     receivedMessage = receiveMessage(avatarSocket);
     if(receivedMessage != NULL) {
       switch(ntohl(receivedMessage->type)) {
-
-			 // If we received the right type of message,
        case AM_AVATAR_TURN:
-         //printf("%d received turn message\n", id);
+         printf("%d received turn message\n", id);
          if(ntohl(receivedMessage->avatar_turn.TurnId) == id){
           printf("Turn of %d id. x pos is %d, y pos is %d\n", id, ntohl(receivedMessage->avatar_turn.Pos[id].x), ntohl(receivedMessage->avatar_turn.Pos[id].y));
-
-					// The message we will send to the server
           AM_Message turnMe;
           turnMe.type = htonl(AM_AVATAR_MOVE);
           turnMe.avatar_move.AvatarId = htonl(id);
+          int serverPos = ntohl(receivedMessage->avatar_turn.Pos[id].y) * getWidth(mazeMap) + ntohl(receivedMessage->avatar_turn.Pos[id].x);
 
-					// Gets the current position of the avatar
-          serverPos = ntohl(receivedMessage->avatar_turn.Pos[id].x) * getWidth(mazeMap) + ntohl(receivedMessage->avatar_turn.Pos[id].y);
-
-          // we never store mapDir in any other variable
-					// Converts the representation of the Direction to a string, for better readability
-          char mapDir[10];
-          if(desiredDir == 0) {
-            strcpy(mapDir,"north");
-          } else if(desiredDir == 1) {
-            strcpy(mapDir,"east");
-          } else if(desiredDir == 2) {
-            strcpy(mapDir,"south");
-          } else if(desiredDir == 3) {
-            strcpy(mapDir,"west");
-          }
-
-
-					// If the Avatar has reached the middle of the maze,
           if(serverPos == ((getWidth(mazeMap))*(getHeight(mazeMap))/2+1)) {
-            turnMe.avatar_move.Direction = htonl(M_NULL_MOVE);  // Don't move!
-          }
- 
-					// If this is our first time getting the position of the Avatar,
-					else if(pos == -1) {
-            pos = serverPos;  // Just set it to the position returned by the server
-          } 
-
-					/***********THE RIGHT-HAND RULE**********/
-
-					// If the Avatar moved,				
-					else if (pos != serverPos) {
-
+            turnMe.avatar_move.Direction = htonl(M_NULL_MOVE);
+          } else if(pos == -1) {
+            pos = serverPos;
+          } else if (pos != serverPos) {
             if(serverPos == pos-getWidth(mazeMap)) {
               dir = 0;
             }
@@ -275,31 +232,13 @@ void* run_thread(void* idp) {
               dir = 3;
             }
             pos = serverPos;
-          } 
-					
-					// If the Avatar did NOT move	
-					else {
-              setMapWall(mazeMap, serverPos, mapDir);  // There's a wall in the way!
-              
+            desiredDir = (dir+1)%4;
+          } else {
+              setMapWall(mazeMap, serverPos, desiredDir);
           }
-
-					// Works out the next Desired Direction
-          desiredDir = (dir+1)%3; // checks 90 degrees clockwise 
-          while(getMapWall(mazeMap, serverPos, mapDir) == 1) {
-
-            desiredDir = (desiredDir-1)%3; //turns desired direction 90 degrees counter clockwise
-            if(desiredDir == 0) {
-              strcpy( mapDir, "north");
-            } else if(desiredDir == 1) {
-              strcpy( mapDir, "east");
-            } else if(desiredDir == 2) {
-              strcpy( mapDir, "south");
-            } else if(desiredDir == 3) {
-              strcpy( mapDir, "west");
-            }
+          while(getMapWall(mazeMap, serverPos, desiredDir) == 1) {
+            desiredDir = (desiredDir+7)%4;
           }
-
-					// Turns the Avatar based upon the Desired Direction
           if(desiredDir == 0) {
             turnMe.avatar_move.Direction = htonl(M_NORTH);
           } else if(desiredDir == 1) {
@@ -310,13 +249,9 @@ void* run_thread(void* idp) {
             turnMe.avatar_move.Direction = htonl(M_WEST);
           }
           
-					/***********END OF RIGHT-HAND RULE*************/
-
           sendMessage(avatarSocket, &turnMe);
          }
          break;
-			 /**************DONE WORKING TO SOLVE**************/
-
        case AM_MAZE_SOLVED:
         //append to log it was solved;
           printf("Maze was solved\n");
@@ -362,3 +297,4 @@ void* run_thread(void* idp) {
 
   pthread_exit(&threadReturnStatus);
 }
+

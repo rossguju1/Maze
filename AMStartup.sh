@@ -45,6 +45,8 @@ if [ $options_found != 3 ]; then
   exit 1
 fi
 
+echo $USER
+
 ./amazingClient $Hostname 17235 $nAvatars $Difficulty "Amazing_""$USER""_""$nAvatars""_""$Difficulty".log $USER
 
 ##if [[ Error -gt 0 && Error -lt 7 ]]; then 

@@ -91,35 +91,36 @@ int getHeight(MazeMap_t* map)
   return map->height;
 }
 
-void setMapWall(MazeMap_t* maze, int pos, char* dir)
+void setMapWall(MazeMap_t* maze, int pos, int dir)
 {
-  if(strcmp(dir, "north") == 0) {
+  if ( dir == 0) {
     maze->map[pos]->north = 1;
   }
-  if(strcmp(dir, "south") == 0) {
-    maze->map[pos]->south = 1;
-  }
-  if(strcmp(dir, "east") == 0) {
+  if (dir == 1) {
     maze->map[pos]->east = 1;
   }
-  if(strcmp(dir, "west") == 0) {
+  if(dir == 2) {
+    maze->map[pos]->south = 1;
+  }
+  if(dir == 3) {
     maze->map[pos]->west = 1;
   }
 }
   
-int getMapWall(MazeMap_t* maze, int pos, char* dir) 
+int getMapWall(MazeMap_t* maze, int pos, int dir) 
 {
-  if(strcmp(dir, "north") == 0) {
+  if(dir == 0) {
     return (maze->map[pos]->north);
   }
-  if(strcmp(dir, "south") == 0) {
-    return (maze->map[pos]->south);
-  }
-  if(strcmp(dir, "east") == 0) {
+  if(dir == 1) {
     return (maze->map[pos]->east);
   }
-  if(strcmp(dir, "west") == 0) {
+  if(dir == 2) {
+    return (maze->map[pos]->south);
+  }
+  if(dir == 3) {
     return(maze->map[pos]->west);
   }
   else return -1;
 }
+
