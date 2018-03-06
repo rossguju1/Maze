@@ -3,13 +3,11 @@
 Rachel Martin, Steven Karson, Ross Guju, Rafael Brantley, March 2018
 
 
+
 ### Usage
 
 To run,
 `./AMStartup.sh -n <number of avatars> -d <difficulty> -h <host>`
-
-
-### Exit Status
 
 
 
