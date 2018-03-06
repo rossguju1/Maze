@@ -82,7 +82,8 @@ main(const int argc, char *argv[])
     free(initRecvMessage);
   }
   else {
-    fprintf(stderr, "Could not initialize Maze\n");
+    fprintf(logfile, "Could not initialize Maze\n");
+    fclose(logfile);
     exit(2);
   }
 
@@ -272,41 +273,43 @@ void* run_thread(void* idp) {
           if(serverPos == (getWidth(mazeMap))*(getHeight(mazeMap)/2)+(getWidth(mazeMap)/2)) {                   //Don't move if you are in the center of the maze
             turnMe.avatar_move.Direction = htonl(M_NULL_MOVE);
             fprintf(logfile, "Avatar %d is already where it needs to be so it sent a null move request\n", id);
-          } else if(pos == -1) {                                                                //If this is the first message recieved, set your position
-            pos = serverPos;
-          } else if (pos != serverPos) {                                                        //If your move was accepted,
-            fprintf(logfile, "Last move for avatar %d was accepted\n", id);                     //update the direction you are facing in your local maze
-            if(serverPos == pos-getWidth(mazeMap)) {
-              dir = 0;
-            }
-            if(serverPos == pos+1) {
-              dir = 1;
-            }
-            if(serverPos == pos+getWidth(mazeMap)) {
-              dir = 2;
-            }
-            if(serverPos == pos-1) {
-              dir = 3;
-            }
-            pos = serverPos;                                                                    //and update your position
-            desiredDir = (dir+1)%4;                                                             //and desired direction
-          } else {                                                                              //If your move was rejected, put a wall in the local maze
-              fprintf(logfile, "Last move for avatar %d was into a wall\n", id);
-              setMapWall(mazeMap, serverPos, desiredDir);
-          }
-          while(getMapWall(mazeMap, serverPos, desiredDir) == 1) {
-            desiredDir = (desiredDir+7)%4;                                                      //update the desired direction once counterclockwise if you know there is a wall there
-          }
+          } else {
+              if(pos == -1) {                                                                //If this is the first message recieved, set your position
+                pos = serverPos;
+              } else if (pos != serverPos) {                                                        //If your move was accepted,
+                fprintf(logfile, "Last move for avatar %d was accepted\n", id);                     //update the direction you are facing in your local maze
+                if(serverPos == pos-getWidth(mazeMap)) {
+                  dir = 0;
+                }
+                if(serverPos == pos+1) {
+                  dir = 1;
+                }
+                if(serverPos == pos+getWidth(mazeMap)) {
+                  dir = 2;
+                }
+                if(serverPos == pos-1) {
+                  dir = 3;
+                }
+                pos = serverPos;                                                                    //and update your position
+                desiredDir = (dir+1)%4;                                                             //and desired direction
+              } else {                                                                              //If your move was rejected, put a wall in the local maze
+                  fprintf(logfile, "Last move for avatar %d was into a wall\n", id);
+                  setMapWall(mazeMap, serverPos, desiredDir);
+              }
+              while(getMapWall(mazeMap, serverPos, desiredDir) == 1) {
+                desiredDir = (desiredDir+7)%4;                                                      //update the desired direction once counterclockwise if you know there is a wall there
+              }
 
-          //request to move in the desired direction
-          if(desiredDir == 0) {
-            turnMe.avatar_move.Direction = htonl(M_NORTH);                                    
-          } else if(desiredDir == 1) {
-            turnMe.avatar_move.Direction = htonl(M_EAST);
-          } else if(desiredDir == 2) {
-            turnMe.avatar_move.Direction = htonl(M_SOUTH);
-          } else if(desiredDir == 3) {
-            turnMe.avatar_move.Direction = htonl(M_WEST);
+            //request to move in the desired direction
+            if(desiredDir == 0) {
+              turnMe.avatar_move.Direction = htonl(M_NORTH);                                    
+            } else if(desiredDir == 1) {
+              turnMe.avatar_move.Direction = htonl(M_EAST);
+            } else if(desiredDir == 2) {
+              turnMe.avatar_move.Direction = htonl(M_SOUTH);
+            } else if(desiredDir == 3) {
+              turnMe.avatar_move.Direction = htonl(M_WEST);
+            }
           }
           sendMessage(avatarSocket, &turnMe);
           fprintf(logfile, "Avatar %d sent move request: %lu\n", id, (unsigned long)ntohl(turnMe.avatar_move.Direction));
