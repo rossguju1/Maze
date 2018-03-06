@@ -55,7 +55,7 @@ AM_connect(const char *hostname, const int port, const int numAva, const int dif
     close(comm_sock);
     return NULL;
   }
-  printf("Connected to flume's class port!\n");
+  printf("Connected to flume's port!\n");
 
   // Send the AM_INIT message
   if(send(comm_sock, &initial, sizeof(AM_Message), 0) == -1) {
