@@ -93,18 +93,33 @@ int getHeight(MazeMap_t* map)
 
 void setMapWall(MazeMap_t* maze, int pos, int dir)
 {
+  int width =maze->width;
+  int height =maze->height;
+
   if ( dir == 0) {
     maze->map[pos]->north = 1;
+    if(pos > width) {
+      maze->map[pos-width]->south = 1;
+    }
   }
   if (dir == 1) {
     maze->map[pos]->east = 1;
+    if(pos % width != width-1) {
+      maze->map[pos+1]->west = 1;
+    }
   }
   if(dir == 2) {
     maze->map[pos]->south = 1;
+    if (pos < width*height-width) {
+      maze->map[pos+width]->north = 1;
+    }
   }
   if(dir == 3) {
     maze->map[pos]->west = 1;
-  }
+    if(pos % width != 0) {
+      maze->map[pos-1]->east = 1;
+    }
+  } 
 }
   
 int getMapWall(MazeMap_t* maze, int pos, int dir) 
@@ -121,6 +136,7 @@ int getMapWall(MazeMap_t* maze, int pos, int dir)
   if(dir == 3) {
     return(maze->map[pos]->west);
   }
+ 
   else return -1;
 }
 
