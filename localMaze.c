@@ -12,7 +12,11 @@
 
 typedef struct MazeNode
 {
-    //int: 0 path, 1 wall
+		// Each of these integers represents a wall at the orthogonal sides of the nodes
+		// Each can be a 0 or a 1
+			// 0: We have either confirmed there is no wall on this side, or have not checked
+			// 1: We have confirmed there is a wall on this side
+    // Every one will be initialized to 0
     int west;
     int east;
     int north;
@@ -21,10 +25,10 @@ typedef struct MazeNode
 
 typedef struct MazeMap
 {
-	int width;
-	int height;
+	int width;	// The width of the Maze (returned by the Server in AM_INIT_OK)
+	int height;	// The height of the Maze
 	// 1-D array of pointers to "MazeNode_t"s
-	MazeNode_t** map;   
+	MazeNode_t** map;	// The list of Nodes in the Map
 } MazeMap_t;
 
 static MazeNode_t* MazeNode_new();
@@ -42,8 +46,13 @@ MazeMap_t *initMazeMap(int width, int height)
     if(MazeMap == NULL) {
       return NULL; // error allocating memory
     } else {
+
+			// Stores the width and height returned by the server
       MazeMap->width = width;
       MazeMap->height = height;
+
+
+			// Initializes the nodes and puts walls at the edges of the map
       MazeMap->map = calloc(width*height, sizeof(MazeNode_t*));
       for(int i = 0; i < width*height; i++) {
         MazeMap->map[i] = MazeNode_new();
@@ -64,6 +73,8 @@ MazeMap_t *initMazeMap(int width, int height)
     }
 }
 
+// Allocates the memory for each node
+// ...and assumes there are no walls on their sides
 static MazeNode_t * // not visible outside this file
 MazeNode_new()
 {
@@ -81,6 +92,7 @@ MazeNode_new()
   }
 }
 
+/*********Getters**********/
 int getWidth(MazeMap_t* map) 
 {
   return map->width;
@@ -90,7 +102,11 @@ int getHeight(MazeMap_t* map)
 {
   return map->height;
 }
+/**************************/
 
+
+// Puts a wall between nodes
+// The edge is specified by the side `dir` on one node `pos`
 void setMapWall(MazeMap_t* maze, int pos, int dir)
 {
   int width =maze->width;
@@ -121,7 +137,9 @@ void setMapWall(MazeMap_t* maze, int pos, int dir)
     }
   } 
 }
-  
+
+
+// Returns 0 if e have either confirmed there is no wall on this side, or have not checked on `dir` side of node `pos`
 int getMapWall(MazeMap_t* maze, int pos, int dir) 
 {
   if(dir == 0) {
@@ -140,6 +158,8 @@ int getMapWall(MazeMap_t* maze, int pos, int dir)
   else return -1;
 }
 
+
+// Frees all allocated memory
 void deleteMaze(MazeMap_t* map)
 {
   if(map != NULL) {
