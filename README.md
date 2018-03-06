@@ -13,6 +13,10 @@ To run,
 
 ### Compilation
 
+Type `make` in the `cs50W18-8` directory
+
+For manual compilation of `amazingClient`,
+
 If compiling on one of Dartmouth Servers,
 `mygcc amazingClient.c localMaze.c startup.c -o amazingClient -lpthread`
 
