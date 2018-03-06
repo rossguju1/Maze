@@ -57,7 +57,7 @@ main(const int argc, char *argv[])
   // check arguments
   program = argv[0];
   if (argc != 7) {
-    fprintf(stderr, "usage: %s hostname port numAva diff\n", program);
+    fprintf(stderr, "usage: %s hostname port numAva diff logfilename username\n", program);
     exit(1);
   } else {
     hostname = argv[1];
