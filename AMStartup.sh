@@ -20,10 +20,18 @@ while getopts :n:d:h: opt; do
   case $opt in
   	n) 
 		nAvatars=$OPTARG
+		if [ "$nAvatars" -lt 2 ]; then
+			echo "There must be at least 2 avatars" >&2
+			exit 1
+		fi
 		((options_found++))
 		;;
 	d)
 		Difficulty=$OPTARG
+		if [ "$Difficulty" -gt 9 ] || [ "$Difficulty" -lt 0 ]; then
+			echo "Difficulty must be between 0 and 9" >&2
+			exit 1
+		fi
 		((options_found++))
 		;;
 	h)
