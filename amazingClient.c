@@ -95,7 +95,7 @@ main(const int argc, char *argv[])
 
   logfile = fopen(argv[5], "a");
   // Allocate memory for array
-  threadArray = malloc(sizeof(pthread_t)*numAva); //TODO: free memory
+  threadArray = malloc(sizeof(pthread_t)*numAva); 
   int ids[numAva];
 
   for ( int i = 0; i < numAva; i++) {
@@ -105,12 +105,30 @@ main(const int argc, char *argv[])
 
   for ( int j = 0; j < numAva; j++ ) {
     pthread_join(threadArray[j], (void**)&threadReturn);
+    if(j != numAva-1) {
+      free(threadReturn);
+    }
   }
   free(threadArray);
   printf("Thread return status is %d\n", *threadReturn);
-  if(*threadReturn == 1) {
-    printf("YUSSS We solved it\n");
+  if(threadReturn != NULL) {
+    if(*threadReturn == 1) {
+      fprintf(logfile, "We solved the maze. Yay!\n");
+    } else if (*threadReturn == 2) {
+      fprintf(logfile, "AM_NO_SUCH_AVATAR message received\n");
+    } else if (*threadReturn == 3) {
+      fprintf(logfile, "AM_UNKNOWN_MSG_TYPE message received\n");
+    } else if (*threadReturn == 4) {
+      fprintf(logfile, "AM_TOO_MANY_MOVES message received\n");
+    } else if (*threadReturn == 5) {
+      fprintf(logfile, "AM_SERVER_TIMEOUT message received\n");
+    } else if (*threadReturn == 6) {
+      fprintf(logfile, "AM_SERVER_OUT_OF_MEM message received\n");
+    } else if (*threadReturn == 7) {
+      fprintf(logfile, "There was a problem creating the socket or sending the AVATAR_READY message\n");
+    }
   }
+  free(threadReturn);
   fclose(logfile);
   deleteMaze(mazeMap);
   
@@ -225,12 +243,16 @@ void* run_thread(void* idp) {
   int pos= -1;   //position of the avatar in the maze numbering each cell from 0 to (width*height) going from left to right and then down each row
   int dir = 0;   //directions: north=0,east=1,south=2,west=3;
   int desiredDir = 1;
-  int threadReturnStatus = 0;     //indicates whether the maze was solved or an error occured
+  int *threadReturnStatus = malloc(sizeof(int));
+  if (threadReturnStatus == NULL) {
+    pthread_exit(NULL);
+  }
+  //int threadReturnStatus = 0;     //indicates whether the maze was solved or an error occured
   pthread_mutex_lock(&mutex);
   int avatarSocket = createSocket(hostname, MazePort, id);    //creates the avatars socket and sends the AVATAR_READY message
   pthread_mutex_unlock(&mutex);
   if(avatarSocket == -1) {                                //if there was a problem creating the socket or sending the AVATAR_READY message
-    threadReturnStatus = 7;
+    *threadReturnStatus = 7;
     madeSocket = false;
   }
   
@@ -275,7 +297,7 @@ void* run_thread(void* idp) {
               setMapWall(mazeMap, serverPos, desiredDir);
           }
           while(getMapWall(mazeMap, serverPos, desiredDir) == 1) {
-            desiredDir = (desiredDir+7)%4;
+            desiredDir = (desiredDir+7)%4;                                                      //update the desired direction once counterclockwise if you know there is a wall there
           }
 
           //request to move in the desired direction
@@ -295,14 +317,14 @@ void* run_thread(void* idp) {
       //if maze was solved or a fatal error occured, change the thread return status
        case AM_MAZE_SOLVED:
           printf("Maze was solved\n");
-          threadReturnStatus = 1;
+          *threadReturnStatus = 1;
          break;
        case AM_NO_SUCH_AVATAR:
-         threadReturnStatus = 2;
+         *threadReturnStatus = 2;
          break;
        case AM_UNKNOWN_MSG_TYPE:
          fprintf(stderr, "Server received an unknown message of type %lu\n", (unsigned long)ntohl(receivedMessage->unknown_msg_type.BadType));
-         threadReturnStatus = 3;
+         *threadReturnStatus = 3;
          break;
        case AM_UNEXPECTED_MSG_TYPE:
          fprintf(stderr, "Unexpected Message\n");
@@ -312,27 +334,27 @@ void* run_thread(void* idp) {
          break;
        case AM_TOO_MANY_MOVES:
          fprintf(stderr, "Out of turns\n");
-         threadReturnStatus = 4;
+         *threadReturnStatus = 4;
          break;
        case AM_SERVER_TIMEOUT:
          fprintf(stderr, "Server timed out\n");
-         threadReturnStatus = 5;
+         *threadReturnStatus = 5;
          break;
        case AM_SERVER_DISK_QUOTA:
          fprintf(stderr, "Server encountered a disk quota error.\n");
          break;
        case AM_SERVER_OUT_OF_MEM:
          fprintf(stderr, "Server was out of memory.\n");
-         threadReturnStatus = 6;
+         *threadReturnStatus = 6;
          break;
       }
     free(receivedMessage);
     }
    //if the thread return status has been changed, exit the thread function
-    if(threadReturnStatus != 0) {
+    if(*threadReturnStatus != 0) {
      break;      // Break out of while loop
     }
   } 
-  pthread_exit(&threadReturnStatus);
+  pthread_exit((void*)threadReturnStatus);
 }
 
