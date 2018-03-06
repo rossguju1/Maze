@@ -262,9 +262,7 @@ void* run_thread(void* idp) {
     if(receivedMessage != NULL) {
       switch(ntohl(receivedMessage->type)) {
        case AM_AVATAR_TURN:
-         printf("%d received turn message\n", id);
          if(ntohl(receivedMessage->avatar_turn.TurnId) == id){                    //if it is your turn
-          printf("Turn of %d id. x pos is %d, y pos is %d\n", id, ntohl(receivedMessage->avatar_turn.Pos[id].x), ntohl(receivedMessage->avatar_turn.Pos[id].y));
           AM_Message turnMe;
           turnMe.type = htonl(AM_AVATAR_MOVE);
           turnMe.avatar_move.AvatarId = htonl(id);
