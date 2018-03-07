@@ -248,7 +248,7 @@ void* run_thread(void* idp) {
   if (threadReturnStatus == NULL) {
     pthread_exit(NULL);
   }
-  //int threadReturnStatus = 0;     //indicates whether the maze was solved or an error occured
+  *threadReturnStatus = 0;     //indicates whether the maze was solved or an error occured
   pthread_mutex_lock(&mutex);
   int avatarSocket = createSocket(hostname, MazePort, id);    //creates the avatars socket and sends the AVATAR_READY message
   pthread_mutex_unlock(&mutex);
