@@ -6,6 +6,12 @@
 
 _amazingClient_ communicates with the CS 50 to solve the Amazing Maze Challenge with varying difficulties and numbers of avatars.
 
+_AMStartup.sh_ parses parameters and calls _amazingClient.c_
+_amazingClient.c_ manages the log file runs a thread for each avatar, which implements the right hand rule
+_startup.c_ makes the initial connection to the server and gets our MazePort and maze dimensions.
+	This is called by _amazingClient.c_ through the method _AMconnect()_
+_localMaze.c_ contains the client-side repressentation of the maze
+
 ### Usage
 
 To run,
