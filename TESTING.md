@@ -12,4 +12,4 @@ In addition, we tested to make sure the code was following the right hand rule b
 
 ### Testing different levels
 
-We tested our code all the way up to level 9 with 7 avatars and got successs. The log files from these runs can be seen in successful_log_examples.
+We tested our code all the way up to level 7 with 4 avatars and got successs. The log files from these runs can be seen in successful_log_examples.
