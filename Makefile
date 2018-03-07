@@ -1,6 +1,6 @@
 # Makefile for the "Maze Challenge" project.
 #
-# Rachel Martin, Steven Karson, Ross Guju, Raphael Brantley 3/8/18, CS 50
+# Rachel Martin, Steven Karson, Ross Guju, Rafael Brantley 3/8/18, CS 50
 
 CC=gcc
 CFLAGS=-Wall -pedantic -std=c11 -ggdb

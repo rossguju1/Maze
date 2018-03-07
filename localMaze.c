@@ -33,6 +33,7 @@ typedef struct MazeMap
 
 static MazeNode_t* MazeNode_new();
 
+
 MazeMap_t *initMazeMap(int width, int height)
 {	
 
@@ -73,6 +74,7 @@ MazeMap_t *initMazeMap(int width, int height)
     }
 }
 
+
 // Allocates the memory for each node
 // ...and assumes there are no walls on their sides
 static MazeNode_t * // not visible outside this file
@@ -105,8 +107,6 @@ int getHeight(MazeMap_t* map)
 /**************************/
 
 
-// Puts a wall between nodes
-// The edge is specified by the side `dir` on one node `pos`
 void setMapWall(MazeMap_t* maze, int pos, int dir)
 {
   int width =maze->width;
@@ -159,7 +159,6 @@ int getMapWall(MazeMap_t* maze, int pos, int dir)
 }
 
 
-// Frees all allocated memory
 void deleteMaze(MazeMap_t* map)
 {
   if(map != NULL) {
