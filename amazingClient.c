@@ -27,6 +27,7 @@ int createSocket(char* hostname, uint32_t MazePort, int AvatarId );     //create
 int sendMessage(int socket, AM_Message* message);
 AM_Message* receiveMessage(int socket) ;
 void* run_thread(void* idp);
+void printMaze(MazeMap_t* map, AM_Message* receivedMessage, int AvatarNumber);
 
 
 /**************** global variables ****************/
@@ -36,6 +37,7 @@ char *hostname;       // server hostname
 uint32_t MazePort;
 pthread_mutex_t mutex;
 FILE* logfile;
+int numAva;
 /**************** main() ****************/
 int
 main(const int argc, char *argv[])
@@ -44,7 +46,7 @@ main(const int argc, char *argv[])
   
   char* user;
   int port;         // initial server port
-  int numAva;
+
   int diff;
   AM_Message* initRecvMessage;
   
@@ -311,9 +313,11 @@ void* run_thread(void* idp) {
               turnMe.avatar_move.Direction = htonl(M_WEST);
             }
           }
+	  //printMaze(mazeMap, receivedMessage, numAva);
           sendMessage(avatarSocket, &turnMe);
           fprintf(logfile, "Avatar %d sent move request: %lu\n", id, (unsigned long)ntohl(turnMe.avatar_move.Direction));
-         }
+         printMaze(mazeMap, receivedMessage, numAva);
+	 }
          break;
       //if maze was solved or a fatal error occured, change the thread return status
        case AM_MAZE_SOLVED:
@@ -359,3 +363,38 @@ void* run_thread(void* idp) {
   pthread_exit((void*)threadReturnStatus);
 }
 
+
+void printMaze(MazeMap_t* map, AM_Message* receivedMessage, int AvatarNumber)
+{
+
+
+char array[getHeight(map)][getWidth(map)];
+   for (int i=0; i < getHeight(map); i++ ){
+        for (int j=0; j < getWidth(map); j++){
+              array[i][j] = '.';
+
+ for (int index = 0; index < AvatarNumber; index++) {
+ array[ntohl(receivedMessage->avatar_turn.Pos[index].x)][ntohl(receivedMessage->avatar_turn.Pos[index].y)] = index + '0';
+        }
+
+      }
+    }
+
+  usleep(250000); // sleep for .25 seconds then clear and print updated maze
+
+
+  system("clear"); // clears stdout so that the maze is in the same location in the terminal
+
+
+
+      for (int i=0; i < getWidth(map); i++ ){
+        for (int j=0; j < getHeight(map); j++){
+
+  printf("%c ", array[i][j] );
+
+  }
+        printf("\n");
+      }
+
+
+}
