@@ -367,34 +367,26 @@ void* run_thread(void* idp) {
 void printMaze(MazeMap_t* map, AM_Message* receivedMessage, int AvatarNumber)
 {
 
+  char array[getHeight(map)][getWidth(map)];
+  for (int i=0; i < getHeight(map); i++ ) {
+    for (int j=0; j < getWidth(map); j++) {
+      array[i][j] = '.';
 
-char array[getHeight(map)][getWidth(map)];
-   for (int i=0; i < getHeight(map); i++ ){
-        for (int j=0; j < getWidth(map); j++){
-              array[i][j] = '.';
-
- for (int index = 0; index < AvatarNumber; index++) {
- array[ntohl(receivedMessage->avatar_turn.Pos[index].x)][ntohl(receivedMessage->avatar_turn.Pos[index].y)] = index + '0';
-        }
-
+      for (int index = 0; index < AvatarNumber; index++) {
+        array[ntohl(receivedMessage->avatar_turn.Pos[index].x)][ntohl(receivedMessage->avatar_turn.Pos[index].y)] = index + '0';
       }
     }
+  }
 
-  usleep(250000); // sleep for .25 seconds then clear and print updated maze
-
+  sleep(.25); // sleep for .25 seconds then clear and print updated maze
 
   system("clear"); // clears stdout so that the maze is in the same location in the terminal
 
+  for (int i=0; i < getHeight(map); i++ ){
+    for (int j=0; j < getWidth(map); j++){
 
-
-      for (int i=0; i < getWidth(map); i++ ){
-        for (int j=0; j < getHeight(map); j++){
-
-  printf("%c ", array[i][j] );
-
+      printf("%c ", array[i][j] );
+    }
+    printf("\n");
   }
-        printf("\n");
-      }
-
-
 }
